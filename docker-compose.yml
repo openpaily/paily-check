@@ -1,0 +1,26 @@
+services:
+  checker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: paily-check:latest
+    restart: unless-stopped
+    environment:
+      TZ: "${TZ:-Asia/Shanghai}"
+      PAILY_CORE_URL: "${PAILY_CORE_URL:?PAILY_CORE_URL is required}"
+      PAILY_SERVICE_SECRET: "${PAILY_SERVICE_SECRET:?PAILY_SERVICE_SECRET is required}"
+      CHECK_CRON: "${CHECK_CRON:-0 */30 * * * *}"
+      INITIAL_CONCURRENCY: "${INITIAL_CONCURRENCY:-128}"
+      INITIAL_ALIVE_THRESHOLD_MS: "${INITIAL_ALIVE_THRESHOLD_MS:-3000}"
+      DEEP_PING_CONCURRENCY: "${DEEP_PING_CONCURRENCY:-64}"
+      DEEP_PING_FILTER_DEAD: "${DEEP_PING_FILTER_DEAD:-false}"
+      GEO_MODE: "${GEO_MODE:-mmdb}"
+      GEO_MMDB_PATH: "${GEO_MMDB_PATH:-/app/data/Country-without-asn.mmdb}"
+      SCRIPT_DIR: "/app/scripts"
+      SPEED_ENABLED: "${SPEED_ENABLED:-false}"
+      SPEED_DURATION_S: "${SPEED_DURATION_S:-8}"
+      PROGRESS_BAR: "${PROGRESS_BAR:-false}"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./scripts:/app/scripts:ro
+      - ./data:/app/data

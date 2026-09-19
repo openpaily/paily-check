@@ -1,0 +1,129 @@
+# 当同时配置了环境变量和配置文件时，相关配置会以环境变量为准
+core:
+  # Paily 主服务 API 地址
+  # 环境变量：PAILY_CORE_URL
+  url: "http://localhost:8080"
+  # 对应的测活后端密钥
+  # 环境变量：PAILY_SERVICE_SECRET
+  secret: ""
+
+schedule:
+  # 六字段 Cron 表达式：秒 分 时 日 月 周。默认每 30 分钟执行一次。
+  # 环境变量：CHECK_CRON
+  cron: "0 */30 * * * *"
+
+# 节点延迟初筛配置
+initial:
+  # 初筛 Ping URL
+  # 环境变量：INITIAL_PING_URL
+  ping_url: "https://www.gstatic.com/generate_204"
+  # 每个节点的 Ping 次数
+  # 环境变量：INITIAL_PING_AVG
+  ping_avg: 3
+  # 单次 Ping 超时，单位毫秒
+  # 环境变量：INITIAL_PING_TIMEOUT_MS
+  ping_timeout_ms: 3000
+  # 初筛 Ping 的节点并发数，通常建议 150 或更高
+  # 环境变量：INITIAL_CONCURRENCY
+  concurrency: 50
+  # Ping 延迟为 -1 或超过该值的节点不再进入后续检测。设为 0 表示所有非负延迟节点均继续。
+  # 环境变量：INITIAL_ALIVE_THRESHOLD_MS
+  alive_threshold_ms: 3000
+
+# 节点复筛配置
+deep:
+  ping:
+    # 复筛 Ping 的节点并发数，通常建议 100 或更高
+    # 环境变量：DEEP_PING_CONCURRENCY
+    concurrency: 20
+    # 每个节点的 Ping 次数
+    # 环境变量：DEEP_PING_AVG
+    avg: 7
+    # 复筛 Ping URL
+    # 环境变量：DEEP_PING_URL
+    ping_url: "https://www.gstatic.com/generate_204"
+    # 单次 Ping 超时，单位毫秒。
+    # 环境变量：DEEP_PING_TIMEOUT_MS
+    timeout_ms: 3000
+    # 是否过滤掉多次 Ping 全部超时的节点
+    # 环境变量：DEEP_PING_FILTER_DEAD
+    filter_dead_deep: false
+
+  geo:
+    # 地区检测的节点并发数，建议不超过 50
+    # 环境变量：DEEP_GEO_CONCURRENCY
+    concurrency: 20
+    # 地区检测模式：script、mmdb 或 native_api。
+    # script：通过 JS 脚本查询出口 IP 和地区；mmdb：优先本地 MMDB，未命中时使用 JS 脚本；
+    # native_api：检测器内置的地区检测模块，性能更高
+    # 环境变量：GEO_MODE
+    mode: "script"
+    # MMDB 文件路径。mode=mmdb 时设置；程序会在启动及之后每 12 小时刷新该文件
+    # 环境变量：GEO_MMDB_PATH
+    mmdb_path: ""
+    # 内置检测模块无有效结果时，是否 fallback 到其他检测逻辑
+    # 环境变量：GEO_FALLBACK_LEGACY
+    fallback_legacy: true
+    # 所有出口检测失败时，是否直接查询节点配置中的服务器地址。该结果不是代理出口地区
+    # 环境变量：GEO_FALLBACK_INBOUND
+    fallback_inbound: false
+    # 自定义出口 IP 查询脚本，请注意，这里放脚本内容而不是路径；为空时使用内置实现。开发规范见 SCRIPTING.md
+    # 环境变量：GEO_IP_SCRIPT
+    ip_script: ""
+    # 自定义 GeoIP 查询脚本，请注意，这里放脚本内容而不是路径；为空时使用内置实现。开发规范见 SCRIPTING.md
+    # 环境变量：GEO_GEO_SCRIPT
+    geo_script: ""
+    # IP 与地区查询失败时的重试轮数
+    # 环境变量：GEO_RETRY
+    retry: 2
+    # 内置地区检测模块配置
+    native_api:
+      # 单个节点的公共 GeoIP API 并发查询总超时，单位毫秒。
+      # 环境变量：GEO_NATIVE_API_TIMEOUT_MS
+      timeout_ms: 5000
+      # 启用的公共 GeoIP API 提供方。
+      # 环境变量：GEO_NATIVE_API_PROVIDERS，逗号分隔。
+      providers: ["cloudflare-trace", "ipwhois", "myip", "ipapi-co", "ident-me", "ip-api", "ip-sb", "ipinfo"]
+
+  script:
+    # 同时处理脚本检测的节点数量
+    # 环境变量：DEEP_SCRIPT_NODE_CONCURRENCY
+    node_concurrency: 5
+    # 所有节点共享的脚本执行并发上限
+    # 环境变量：DEEP_SCRIPT_CONCURRENCY
+    script_concurrency: 32
+    # 检测脚本目录
+    # 环境变量：SCRIPT_DIR
+    dir: "./scripts"
+    # 单个脚本总执行超时，单位毫秒
+    # 环境变量：SCRIPT_TIMEOUT_MS
+    timeout_ms: 10000
+    # 脚本引擎：goja 执行 JS 脚本；native 为二进制中的检测逻辑；
+    # auto 优先 Native Handler，不存在时回退到 JS 脚本
+    # 环境变量：SCRIPT_ENGINE
+    engine: "goja"
+    # 仅在这些出口国家或地区代码运行脚本；为空表示不筛选
+    # 可使用 UNKNOWN 匹配地区检测失败的节点
+    # 环境变量：SCRIPT_REGIONS，逗号分隔
+    regions: []
+    # 仅加载指定脚本文件名（不含 .js）；为空表示加载目录内全部脚本
+    # 环境变量：SCRIPT_LIST，逗号分隔
+    scripts: []
+
+  speed:
+    # 下载测速节点并发数，建议保持较低
+    # 环境变量：DEEP_SPEED_CONCURRENCY
+    concurrency: 2
+    # 是否启用下载测速
+    # 环境变量：SPEED_ENABLED
+    enabled: false
+    # 下载测速目标 URL；启用测速时必须设置
+    # 环境变量：SPEED_URL
+    url: "https://dl.google.com/developers/android/sc/images/factory/bramble-s3b1.2\
+      20218.004-factory-a2a7cafb.zip"
+    # 下载线程
+    # 环境变量：SPEED_THREADS
+    threads: 4
+    # 单次测速持续时间，单位秒
+    # 环境变量：SPEED_DURATION_S
+    duration_s: 8
